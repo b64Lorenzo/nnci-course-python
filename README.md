@@ -15,8 +15,11 @@ Capacity and strength plots require Matplotlib: `python -m pip install matplotli
 
 ## Files
 
+- `A1assignment/main.py` — Assignment I parser and entry point.
+- `A1assignment/runs.py` — single run, studies, and CSV output.
 - `A1assignment/perceptron_rosenblatt.py` — data generation and Rosenblatt training.
 - `A1assignment/plots.py` — capacity and embedding-strength plots.
-- `main.py` — command-line interface, similar to the C++ project.
+- `logger.py` — shared timestamped console/file logger.
+- `main.py` — compact top-level entry point.
 
-Results are written to `results/`. This project intentionally has no package-build setup or test suite.
+Results are written to `results/`; run logs go to `logs/`. This project intentionally has no package-build setup or test suite.
