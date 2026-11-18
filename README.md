@@ -12,6 +12,7 @@ python main.py perceptron --strength --dimensions 20 --patterns 15 --datasets 50
 ```
 
 Capacity and strength plots require Matplotlib: `python -m pip install matplotlib`.
+Capacity CSVs include `Q_ls_variance_est`, exact and CLT `P_ls` values, and 95% Wilson bounds. Plots mark the `α=2` transition and exact `P=2N` value `P_ls=1/2`.
 
 ## Files
 

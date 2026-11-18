@@ -3,7 +3,13 @@ from pathlib import Path
 from random import Random
 
 from A1assignment.perceptron_rosenblatt import make_random_binary_data, train_rosenblatt
-from A1assignment.plots import plot_capacity, plot_strength
+from A1assignment.plots import (
+    normal_approximation,
+    plot_capacity,
+    plot_strength,
+    theoretical_probability,
+    wilson_interval,
+)
 from logger import log
 
 
@@ -25,6 +31,8 @@ def capacity_rows(dimensions, first, last, step, datasets, max_epochs, seed, thr
             examples = make_random_binary_data(patterns, dimensions, random.getrandbits(64))
             if train_rosenblatt(examples, max_epochs, threshold)[3]:
                 successes += 1
+        rate = successes / datasets
+        interval = wilson_interval(successes, datasets)
         rows.append({
             "N": dimensions,
             "P": patterns,
@@ -32,14 +40,23 @@ def capacity_rows(dimensions, first, last, step, datasets, max_epochs, seed, thr
             "nD": datasets,
             "nmax": max_epochs,
             "successes": successes,
-            "Q_ls": successes / datasets,
+            "Q_ls": rate,
+            "Q_ls_variance_est": rate * (1.0 - rate) / datasets,
+            "P_ls_exact": theoretical_probability(dimensions, patterns),
+            "P_ls_normal": normal_approximation(dimensions, patterns),
+            "Q_ls_wilson95_low": interval[0],
+            "Q_ls_wilson95_high": interval[1],
             "seed": seed,
         })
     return rows
 
 
 def write_capacity_csv(rows, path):
-    fields = ("N", "P", "alpha", "nD", "nmax", "successes", "Q_ls", "seed")
+    fields = (
+        "N", "P", "alpha", "nD", "nmax", "successes", "Q_ls",
+        "Q_ls_variance_est", "P_ls_exact", "P_ls_normal",
+        "Q_ls_wilson95_low", "Q_ls_wilson95_high", "seed",
+    )
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("w", newline="", encoding="utf-8") as file:
