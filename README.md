@@ -23,4 +23,4 @@ Capacity CSVs include `Q_ls_variance_est`, exact and CLT `P_ls` values, and 95% 
 - `logger.py` — shared timestamped console/file logger.
 - `main.py` — compact top-level entry point.
 
-Results are written to `results/`; run logs go to `logs/`. This project intentionally has no package-build setup or test suite.
+Results are written to `results/`; run logs go to `logs/`. No package-build setup is needed. Run the numerical validation with `python -m unittest discover -s tests -v`.
