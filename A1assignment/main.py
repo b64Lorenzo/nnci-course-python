@@ -18,7 +18,7 @@ def make_parser():
     parser.add_argument("--dimensions", type=positive_int, default=20, help="feature count (default: 20)")
     parser.add_argument("--patterns", type=positive_int, help="patterns for one run or strength study (default: N)")
     parser.add_argument("--datasets", type=positive_int, default=50, help="datasets per P or strength trials (default: 50)")
-    parser.add_argument("--max-epochs", type=positive_int, default=100, help="maximum training sweeps (default: 100)")
+    parser.add_argument("--max-epochs", type=positive_int, default=None, help="maximum training sweeps (default: N * nD, dimensions * datasets)")
     parser.add_argument("--seed", type=int, default=2026, help="random seed (default: 2026)")
     parser.add_argument("--threshold", type=float, default=0.0, help="update threshold (default: 0)")
     study = parser.add_mutually_exclusive_group()

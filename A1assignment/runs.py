@@ -22,7 +22,12 @@ def pattern_range(arguments, dimensions):
     return first, last, step
 
 
+def resolve_max_epochs(dimensions, datasets, max_epochs):
+    return dimensions * datasets if max_epochs is None else max_epochs
+
+
 def capacity_rows(dimensions, first, last, step, datasets, max_epochs, seed, threshold):
+    max_epochs = resolve_max_epochs(dimensions, datasets, max_epochs)
     random = Random(seed)
     rows = []
     for patterns in range(first, last + 1, step):
@@ -105,12 +110,13 @@ def run_n_capacity(arguments):
 
 
 def run_strength(arguments):
+    max_epochs = resolve_max_epochs(arguments.dimensions, arguments.datasets, arguments.max_epochs)
     patterns = arguments.patterns or arguments.dimensions
     random = Random(arguments.seed)
     strengths = []
     for _ in range(arguments.datasets):
         examples = make_random_binary_data(patterns, arguments.dimensions, random.getrandbits(64))
-        result = train_rosenblatt(examples, arguments.max_epochs, arguments.threshold)
+        result = train_rosenblatt(examples, max_epochs, arguments.threshold)
         if result[3]:
             strengths.append(result[4])
     if not strengths:
@@ -135,7 +141,7 @@ def run_single(arguments):
     patterns = arguments.patterns or arguments.dimensions
     result = train_rosenblatt(
         make_random_binary_data(patterns, arguments.dimensions, arguments.seed),
-        arguments.max_epochs,
+        resolve_max_epochs(arguments.dimensions, arguments.datasets, arguments.max_epochs),
         arguments.threshold,
     )
     status = "Converged" if result[3] else "Did not converge"
