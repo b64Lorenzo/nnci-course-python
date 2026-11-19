@@ -32,7 +32,7 @@ def wilson_interval(successes, datasets):
     return max(0.0, center - margin), min(1.0, center + margin)
 
 
-def plot_capacity(csv_paths, output_path):
+def plot_capacity(csv_paths, output_path, clamped=False):
     try:
         import matplotlib.pyplot as plt
     except ImportError as error:
@@ -52,9 +52,9 @@ def plot_capacity(csv_paths, output_path):
                 exact = row.get("P_ls_exact")
                 normal = row.get("P_ls_normal")
                 if not exact:
-                    exact = theoretical_probability(dimensions, patterns)
+                    exact = theoretical_probability(dimensions + int(clamped), patterns)
                 if not normal:
-                    normal = normal_approximation(dimensions, patterns)
+                    normal = normal_approximation(dimensions + int(clamped), patterns)
                 by_dimension.setdefault(dimensions, []).append(
                     (patterns, float(row["Q_ls"]), low, high, float(exact), float(normal))
                 )
@@ -98,8 +98,11 @@ def plot_capacity(csv_paths, output_path):
 
     axis.plot([0.0, 2.0, 2.0, alpha_max], [1.0, 1.0, 0.0, 0.0],
               color="black", linestyle="-.", label="thermodynamic limit ($\\alpha_c=2$)")
-    axis.scatter([2.0], [0.5], color="black", marker="D", zorder=5,
-                 label=r"$P=2N$: $P_{\mathrm{ls}}=1/2$")
+    if not clamped:
+        axis.scatter([2.0], [0.5], color="black", marker="D", zorder=5,
+                     label=r"$P=2N$: $P_{\mathrm{ls}}=1/2$")
+    if clamped:
+        axis.set_title("Inhomogeneous perceptron (clamped input +1)")
     axis.set_xlabel(r"$\alpha=P/N$")
     axis.set_ylabel(r"Probability ($P_{\mathrm{ls}}$, $Q_{\mathrm{ls}}$)")
     axis.set_ylim(0.0, 1.0)

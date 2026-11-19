@@ -17,6 +17,18 @@ class PerceptronValidationTests(unittest.TestCase):
         self.assertEqual(epochs, 1)
         self.assertTrue(converged)
 
+    def test_clamped_separates_inputs_that_need_a_bias(self):
+        examples = [([1.0], -1), ([2.0], 1)]
+        self.assertFalse(train_rosenblatt(examples)[3])
+
+        result = train_rosenblatt(examples, clamped=True)
+        self.assertTrue(result[3])
+        self.assertEqual(len(result[0]), 2)
+        self.assertEqual(len(result[4]), len(examples))
+        self.assertEqual(result, train_rosenblatt([([*x, 1.0], y) for x, y in examples]))
+        self.assertTrue(all(y * (result[0][0] * x[0] + result[0][-1]) > 0 for x, y in examples))
+        self.assertEqual(examples, [([1.0], -1), ([2.0], 1)])
+
     def test_opposite_labels_on_same_input_are_not_separable(self):
         examples = [([1.0, 0.0], 1), ([1.0, 0.0], -1)]
 

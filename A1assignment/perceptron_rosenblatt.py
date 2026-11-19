@@ -13,7 +13,7 @@ def make_random_binary_data(count, dimensions, seed):
     ]
 
 
-def train_rosenblatt(examples, max_epochs=100, threshold=0.0):
+def train_rosenblatt(examples, max_epochs=100, threshold=0.0, clamped=False):
     if max_epochs < 1 or not isfinite(threshold):
         raise ValueError("Maximum epochs must be positive and threshold must be finite")
     if not examples or not examples[0][0]:
@@ -25,6 +25,10 @@ def train_rosenblatt(examples, max_epochs=100, threshold=0.0):
             raise ValueError("Inputs must have equal dimensions and labels must be -1 or +1")
         if any(not isfinite(value) for value in inputs):
             raise ValueError("Inputs must be finite")
+
+    if clamped:
+        examples = [([*inputs, 1.0], label) for inputs, label in examples]
+        dimensions += 1
 
     weights = [0.0] * dimensions
     strengths = [0] * len(examples)

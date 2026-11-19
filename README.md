@@ -14,7 +14,26 @@ python main.py perceptron --strength --dimensions 20 --patterns 15 --datasets 50
 Capacity and strength plots require Matplotlib: `python -m pip install matplotlib`.
 The CLI defaults to `N * nD` maximum epochs: `N` is `--dimensions`, and `nD` is `--datasets` (independent datasets/trials, not `--patterns`). This also applies to single runs; `--NCapacity` recomputes the limit for each N. An explicit positive `--max-epochs` overrides it, and capacity CSV `nmax` records the actual limit.
 The low-level `train_rosenblatt` function still defaults to 100 epochs because it has no dataset/trial count.
-Capacity CSVs include `Q_ls_variance_est`, exact and CLT `P_ls` values, and 95% Wilson bounds. Plots mark the `α=2` transition and exact `P=2N` value `P_ls=1/2`.
+
+Add `--clamped` to any run to learn an inhomogeneous perceptron: each input becomes `[x1, ..., xN, 1]`, so the last weight is the bias in `w·x + b`. For example:
+
+```sh
+python main.py perceptron --capacity --dimensions 2 --datasets 10 --clamped
+```
+
+Without the flag, training stays homogeneous. `N`, `alpha=P/N`, and the default epoch budget still use the original feature count; clamped training uses `N+1` weights and learning rate `1/(N+1)`. Capacity theory also uses `N+1`, and the homogeneous-only `P=2N` marker is omitted. Direct Python calls support `train_rosenblatt(examples, clamped=True)` without modifying the supplied data.
+
+Capacity CSVs include `Q_ls_variance_est`, exact and CLT `P_ls` values, and 95% Wilson bounds. Plots mark the `α=2` thermodynamic transition; homogeneous runs also mark the exact `P=2N` value `P_ls=1/2`.
+
+## Automatic clamped comparison
+
+```sh
+python main.py perceptron --clampedTest --dimensions 20 --patterns 40 --datasets 500 --max-epochs 1000 --seed 2026
+```
+
+This runs both cases with independent datasets (`seed` for homogeneous, `seed+1` for clamped), prints successful counts, rates, their difference and a two-sided Fisher exact p-value, and reports whether `p < 0.05`. The calculation uses only Python's standard library; no SciPy or plotting dependency is needed. Results and parameters are saved to `results/clamped_test.csv`; override it with `--output`.
+
+For this mode, omitted `--patterns` defaults to `2N`; the epoch default remains `N * nD`. Do not combine it with `--clamped`, other study modes or P-sweep options. These are training successes within the chosen epoch limit, not a proof of nonseparability when training fails. Fisher's fixed-margin two-sided definition follows the [SciPy reference](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.fisher_exact.html).
 
 ## Files
 

@@ -90,6 +90,76 @@ class CliEpochTests(unittest.TestCase):
         self.assertEqual(int(rows[0]["successes"]), 2)
         self.assertTrue((self.directory / "results/capacity_N2.png").is_file())
 
+    def test_clamped_capacity_counts_affine_solutions(self):
+        arguments = ("--capacity", "--dimensions", "1", "--datasets", "3", "--max-epochs", "1000",
+                     "--p-min", "2", "--p-max", "2", "--seed", "17")
+        self.run_cli(*arguments)
+        self.assertEqual(int(self.read_csv("results/capacity_N1.csv")[0]["successes"]), 1)
+
+        self.run_cli(*arguments, "--clamped")
+        row = self.read_csv("results/capacity_N1.csv")[0]
+        self.assertEqual(int(row["successes"]), 3)
+        self.assertEqual(float(row["Q_ls"]), 1.0)
+        self.assertEqual(float(row["P_ls_exact"]), 1.0)
+        self.assertEqual((int(row["N"]), int(row["nmax"])), (1, 1000))
+        self.assertTrue((self.directory / "results/capacity_N1.png").is_file())
+
+    def test_clamped_single_run_learns_a_bias(self):
+        result = self.run_cli("--clamped", "--dimensions", "1", "--patterns", "2",
+                              "--seed", "1", "--max-epochs", "1000")
+        self.assertEqual(result.stdout.strip(), "Converged after 27 epochs; updates=52")
+
+    def test_clamped_strength_counts_all_affine_solutions(self):
+        result = self.run_cli("--clamped", "--strength", "--dimensions", "1", "--patterns", "2",
+                              "--datasets", "3", "--seed", "17", "--max-epochs", "1000")
+        self.assertIn("Converged datasets: 3", result.stdout)
+        rows = self.read_csv("results/strengths.csv")
+        self.assertEqual({int(row["successful_case"]) for row in rows}, {1, 2, 3})
+        self.assertEqual(len(rows), 3 * 2)
+        self.assertTrue((self.directory / "results/strength_histogram.png").is_file())
+
+    def test_clamped_n_sweep_uses_affine_training_and_theory(self):
+        self.run_cli("--clamped", "--NCapacity", "1", "2", "1", "--p-min", "2", "--p-max", "2",
+                     "--datasets", "3", "--seed", "17", "--max-epochs", "1000")
+        rows = self.read_csv("results/capacity_N_sweep.csv")
+        self.assertEqual([int(row["N"]) for row in rows], [1, 2])
+        self.assertEqual(int(rows[0]["successes"]), 3)
+        self.assertEqual(float(rows[0]["P_ls_exact"]), 1.0)
+        self.assertTrue((self.directory / "results/capacity_N_sweep.png").is_file())
+
+    def test_clamped_test_reports_independent_groups(self):
+        arguments = ("--clampedTest", "--dimensions", "1", "--patterns", "2", "--datasets", "3",
+                     "--max-epochs", "1000", "--seed", "17", "--output", "results/comparison.csv")
+        result = self.run_cli(*arguments)
+        self.assertIn("Homogeneous: 1/3", result.stdout)
+        self.assertIn("Clamped: 3/3", result.stdout)
+        self.assertIn("Two-sided Fisher exact p-value: 0.4", result.stdout)
+        self.assertIn("Significant at 0.05: no", result.stdout)
+        row = self.read_csv("results/comparison.csv")[0]
+        self.assertEqual((int(row["homogeneous_seed"]), int(row["clamped_seed"])), (17, 18))
+        self.assertEqual((int(row["homogeneous_successes"]), int(row["clamped_successes"])), (1, 3))
+        self.assertEqual(float(row["homogeneous_rate"]), 1 / 3)
+        self.assertEqual(float(row["clamped_rate"]), 1.0)
+        self.assertAlmostEqual(float(row["fisher_p_two_sided"]), 0.4)
+        before = (self.directory / "results/comparison.csv").read_bytes()
+        self.run_cli(*arguments)
+        self.assertEqual((self.directory / "results/comparison.csv").read_bytes(), before)
+        self.assertEqual(list((self.directory / "results").glob("*.png")), [])
+
+    def test_clamped_test_defaults_to_twice_the_feature_count(self):
+        self.run_cli("--clampedTest", "--dimensions", "1", "--datasets", "3", "--seed", "17")
+        row = self.read_csv("results/clamped_test.csv")[0]
+        self.assertEqual((int(row["N"]), int(row["P"]), int(row["nD"]), int(row["nmax"])), (1, 2, 3, 3))
+
+    def test_clamped_test_rejects_conflicting_modes_and_sweeps(self):
+        for extra in (("--capacity",), ("--NCapacity", "1", "2", "1"),
+                      ("--strength",), ("--clamped",), ("--p-min", "2")):
+            with self.subTest(extra=extra):
+                result = self.run_cli("--clampedTest", *extra, expected_code=2)
+                self.assertNotIn("unrecognized arguments", result.stderr)
+                self.assertFalse((self.directory / "results").exists())
+                self.assertFalse((self.directory / "logs").exists())
+
     def test_capacity_explicit_maximum_matches_training_and_csv(self):
         self.run_cli(
             "--capacity", "--dimensions", "2", "--datasets", "3", "--max-epochs", "1",
